@@ -52,6 +52,14 @@ class AuthService(
 
     }
 
+    @Transactional
+    fun logout(refreshToken: String) {
+        val useriD = jwtService.getUserIdFromToken(refreshToken)
+        val hashed = hashToken(refreshToken)
+
+        refreshTokenRepository.deleteByUserIDAndHashedToken(useriD, hashed)
+    }
+
     fun login(email: String, password: String): AuthenticatedUser {
         val user = userRepository.findByEmail(email.trim()) ?: throw InvalidCredentialsException()
 

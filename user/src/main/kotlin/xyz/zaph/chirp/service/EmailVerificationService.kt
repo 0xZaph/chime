@@ -22,6 +22,12 @@ class EmailVerificationService(
     @param:Value("\${chirp.email.verification.expiry-hours}") private val expiryHours: Long
 ) {
 
+    fun resendVerification(
+        email: String
+    ) {
+        // TODO: Implement email sending
+    }
+
     @Transactional
     fun createVerificationToken(email: String) : EmailVerificationToken {
         val user = userRepository.findByEmail(email)

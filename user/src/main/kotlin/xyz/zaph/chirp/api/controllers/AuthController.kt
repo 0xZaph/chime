@@ -17,6 +17,7 @@ import xyz.zaph.chirp.api.dto.ResetPasswordRequest
 import xyz.zaph.chirp.api.dto.UserDto
 import xyz.zaph.chirp.api.mappers.toAuthenticatedUserDto
 import xyz.zaph.chirp.api.mappers.toUserDto
+import xyz.zaph.chirp.infra.rate_limiting.EmailRateLimiter
 import xyz.zaph.chirp.service.AuthService
 import xyz.zaph.chirp.service.EmailVerificationService
 import xyz.zaph.chirp.service.PasswordResetService
@@ -26,7 +27,8 @@ import xyz.zaph.chirp.service.PasswordResetService
 class AuthController(
     private val authService: AuthService,
     private val emailVerificationService: EmailVerificationService,
-    private val passwordResetService: PasswordResetService
+    private val passwordResetService: PasswordResetService,
+    private val emailRateLimiter: EmailRateLimiter
 ) {
 
     @PostMapping("/register")
@@ -45,12 +47,32 @@ class AuthController(
         return user.toAuthenticatedUserDto()
     }
 
+    @PostMapping("/logout")
+    fun logout(
+        @RequestBody request: RefreshRequest
+    ) {
+        authService.logout(request.refreshToken)
+    }
+
     @PostMapping("/refresh")
     fun refresh(
         @RequestBody request: RefreshRequest
     ) : AuthenticatedUserDto {
         val user = authService.refresh(request.refreshToken)
         return user.toAuthenticatedUserDto()
+    }
+
+    @PostMapping("/resend-verification")
+    fun resendVerification(
+        @Valid @RequestBody request: EmailRequest
+    ) {
+
+        emailRateLimiter.withRateLimit(
+            email = request.email,
+        ) {
+            emailVerificationService.resendVerification(request.email)
+        }
+
     }
 
     @GetMapping("/verify")
